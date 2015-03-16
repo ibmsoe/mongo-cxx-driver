@@ -35,7 +35,8 @@ namespace mongo {
     class MessagingPort;
     class PiggyBackData;
 
-    typedef AtomicUInt MSGID;
+    //typedef AtomicUInt MSGID;
+    typedef unsigned int MSGID;
 
     enum Operations {
         opReply = 1,     /* reply. responseTo is set. */
@@ -96,11 +97,11 @@ namespace mongo {
     /* see http://dochub.mongodb.org/core/mongowireprotocol
     */
     struct MSGHEADER {
-        int messageLength; // total message size, including this
-        int requestID;     // identifier for this message
-        int responseTo;    // requestID from the original request
+        little<int> messageLength; // total message size, including this
+        little<int> requestID;     // identifier for this message
+        little<int> responseTo;    // requestID from the original request
         //   (used in responses from db)
-        int opCode;
+        little<int> opCode;
     };
 #pragma pack()
 
@@ -111,10 +112,10 @@ namespace mongo {
         friend class DbMessage;
         friend class MessagingPort;
     public:
-        int len; /* len of the msg, including this field */
-        MSGID id; /* request/reply id's match... */
-        MSGID responseTo; /* id of the message we are responding to */
-        short _operation;
+        little<int> len; /* len of the msg, including this field */
+        little<MSGID> id; /* request/reply id's match... */
+        little<MSGID> responseTo; /* id of the message we are responding to */
+        little<short> _operation;
         char _flags;
         char _version;
 
@@ -127,8 +128,8 @@ namespace mongo {
             _operation = o;
         }
 
-        int& dataAsInt() {
-            return *((int *) _data);
+        little<int>& dataAsInt() {
+            return little<int>::ref( _data );
         }
 
         bool valid() {
@@ -142,8 +143,7 @@ namespace mongo {
         long long getCursor() {
             verify( responseTo > 0 );
             verify( _operation == opReply );
-            long long * l = (long long *)(_data + 4);
-            return l[0];
+            return little<long long>::ref( _data + 4 );
         }
 
         int dataLen(); // len without header
@@ -288,7 +288,8 @@ namespace mongo {
             size_t dataLen = len + sizeof(MsgData) - 4;
             MsgData *d = (MsgData *) malloc(dataLen);
             memcpy(d->_data, msgdata, len);
-            d->len = fixEndian(dataLen);
+            //d->len = fixEndian(dataLen);
+            d->len = dataLen;
             d->setOperation(operation);
             _setData( d, true );
         }

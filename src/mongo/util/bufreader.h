@@ -18,6 +18,8 @@
 #pragma once
 
 #include <boost/noncopyable.hpp>
+#include<boost/type_traits/is_compound.hpp>
+
 
 #include "mongo/bson/util/builder.h"
 #include "mongo/util/assert_util.h"
@@ -29,6 +31,25 @@ namespace mongo {
         buffer with which we are working.
     */
     class BufReader : boost::noncopyable {
+    
+	private:
+       /** Helper class to determine if the values read should be copied or byteswapped */
+       template< typename T, 
+                 bool C = boost::is_compound<T>::value > class TypeToRead {
+       };
+
+       /** Specialization for reading structs */
+       template< typename T > class TypeToRead<T, true> {
+       public:
+          typedef T t;
+       };
+   
+       /** Specialization for reading pods */
+       template< typename T> class TypeToRead<T, false> {
+       public:
+          typedef little<T> t;
+       };
+	   
     public:
         class eof : public std::exception {
         public:
@@ -43,8 +64,10 @@ namespace mongo {
         /** read in the object specified, and advance buffer pointer */
         template <typename T>
         void read(T &t) {
-            T* cur = (T*) _pos;
-            T *next = cur + 1;
+            typedef typename TypeToRead<T>::t R;
+			
+            R* cur = (R*) _pos;
+            R *next = cur + 1;
             if( _end < next ) throw eof();
             t = *cur;
             _pos = next;
@@ -61,8 +84,10 @@ namespace mongo {
         /** read in the object specified, but do not advance buffer pointer */
         template <typename T>
         void peek(T &t) const {
-            T* cur = (T*) _pos;
-            T *next = cur + 1;
+            typedef typename TypeToRead<T>::t R;
+			
+            R* cur = (R*) _pos;
+            R *next = cur + 1;
             if( _end < next ) throw eof();
             t = *cur;
         }

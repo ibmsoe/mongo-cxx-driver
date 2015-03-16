@@ -46,11 +46,10 @@ namespace {
         long long jsonSize = 0;
 
         for ( int i=0; i<numToRun; i++ ) {
-            int size = 1234;
+            little<int> size = 1234;
 
             char* x = new char[size];
-            int* xx = reinterpret_cast<int*>(x);
-            xx[0] = size;
+            little<int>::ref(x) = size;
 
             for ( int i=4; i<size; i++ ) {
                 x[i] = r.nextInt32( 255 );

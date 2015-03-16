@@ -22,6 +22,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/mutex.h"
 #include "mongo/util/time_support.h"
+#include "mongo/bson/util/builder.h"
 
 namespace mongo {
 
@@ -39,8 +40,13 @@ namespace mongo {
      */
 #pragma pack(4)
     class OpTime {
+#ifdef __BIG_ENDIAN__
+        unsigned secs;
+        unsigned i; // ordinal comes first so we can do a single 64 bit compare on little endian
+#else
         unsigned i; // ordinal comes first so we can do a single 64 bit compare on little endian
         unsigned secs;
+#endif
         static OpTime last;
         static OpTime skewed();
     public:
@@ -105,10 +111,18 @@ namespace mongo {
          bytes of overhead.
          */
         unsigned long long asDate() const {
+#ifdef __BIG_ENDIAN__
+            return little<unsigned long long>(reinterpret_cast<const unsigned long long*>(&secs)[0]);
+#else
             return reinterpret_cast<const unsigned long long*>(&i)[0];
+#endif
         }
         long long asLL() const {
+#ifdef __BIG_ENDIAN__
+            return little<long long>(reinterpret_cast<const long long*>(&secs)[0]);
+#else
             return reinterpret_cast<const long long*>(&i)[0];
+#endif
         }
 
         bool isNull() const { return secs == 0; }

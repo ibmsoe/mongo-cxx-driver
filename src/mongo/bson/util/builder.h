@@ -28,7 +28,10 @@
 #include "mongo/base/string_data.h"
 #include "mongo/util/assert_util.h"
 
+#include "bswap.h"
+
 namespace mongo {
+
     /* Accessing unaligned doubles on ARM generates an alignment trap and aborts with SIGBUS on Linux.
        Wrapping the double in a packed struct forces gcc to generate code that works with unaligned values too.
        The generated code for other architectures (which already allow unaligned accesses) is the same as if
@@ -146,35 +149,43 @@ namespace mongo {
         /* assume ownership of the buffer - you must then free() it */
         void decouple() { data = 0; }
 
+    private:
+        /* 
+         *  Wrap all primitive types in an endian/alignment insensitive way.
+         */
+        template<class T> void append( T j ) {
+            little<T>::ref( grow( sizeof( T ) ) ) = j;
+        }
+    public:
         void appendUChar(unsigned char j) {
-            *((unsigned char*)grow(sizeof(unsigned char))) = j;
+            append<unsigned char>( j );
         }
         void appendChar(char j) {
-            *((char*)grow(sizeof(char))) = j;
+            append<char>( j );
         }
         void appendNum(char j) {
-            *((char*)grow(sizeof(char))) = j;
+            append<char>( j );
         }
         void appendNum(short j) {
-            *((short*)grow(sizeof(short))) = j;
+            append<short>( j );
         }
         void appendNum(int j) {
-            *((int*)grow(sizeof(int))) = j;
+            append<int>( j );
         }
         void appendNum(unsigned j) {
-            *((unsigned*)grow(sizeof(unsigned))) = j;
+            append<unsigned>( j );
         }
         void appendNum(bool j) {
-            *((bool*)grow(sizeof(bool))) = j;
+            append<char>( j );
         }
         void appendNum(double j) {
-            (reinterpret_cast< PackedDouble* >(grow(sizeof(double))))->d = j;
+            append<double>( j );
         }
         void appendNum(long long j) {
-            *((long long*)grow(sizeof(long long))) = j;
+            append<long long>( j );
         }
         void appendNum(unsigned long long j) {
-            *((unsigned long long*)grow(sizeof(unsigned long long))) = j;
+            append<unsigned long long>( j );
         }
 
         void appendBuf(const void *src, size_t len) {

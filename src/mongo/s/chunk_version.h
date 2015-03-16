@@ -37,22 +37,34 @@ namespace mongo {
 
         union {
             struct {
+#ifdef BOOST_LITTLE_ENDIAN
                 int _minor;
                 int _major;
+#else
+                int _major;
+                int _minor;
+#endif
             };
             unsigned long long _combined;
         };
         OID _epoch;
 
+#ifdef BOOST_LITTLE_ENDIAN
         ChunkVersion() : _minor(0), _major(0), _epoch(OID()) {}
-
+#else
+        ChunkVersion() : _major(0), _minor(0), _epoch(OID()) {}
+#endif
         //
         // Constructors shouldn't have default parameters here, since it's vital we track from
         // here on the epochs of versions, even if not used.
         //
 
         ChunkVersion( int major, int minor, const OID& epoch )
+#ifdef BOOST_LITTLE_ENDIAN
             : _minor(minor),_major(major), _epoch(epoch) {
+#else
+            : _major(major),_minor(minor), _epoch(epoch) {
+#endif
         }
 
         ChunkVersion( unsigned long long ll, const OID& epoch )

@@ -80,16 +80,16 @@ namespace mongo {
 
 #pragma pack(1)
     struct QueryResult : public MsgData {
-        long long cursorId;
-        int startingFrom;
-        int nReturned;
+        little<long long> cursorId;
+        little<int> startingFrom;
+        little<int> nReturned;
         const char *data() {
-            return (char *) (((int *)&nReturned)+1);
+            return reinterpret_cast<char*>( &nReturned ) + 4;
         }
         int resultFlags() {
             return dataAsInt();
         }
-        int& _resultFlags() {
+        little<int>& _resultFlags() {
             return dataAsInt();
         }
         void setResultFlagsToOk() {
@@ -126,13 +126,20 @@ namespace mongo {
          * 0: InsertOption_ContinueOnError
          * 1: fromWriteback
          */
-        int reservedField() const { return _reserved; }
+        little<int> reservedField() const { return _reserved; }
+
+		
+		const char * afterNS() const;
+		
+		int getInt( int num ) const;		
 
         const char * getns() const;
         int getQueryNToReturn() const;
 
         int pullInt();
+		
         long long pullInt64();
+		
         const long long* getArray(size_t count) const;
 
         /* for insert and update msgs */

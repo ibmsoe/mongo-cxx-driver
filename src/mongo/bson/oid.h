@@ -139,6 +139,7 @@ namespace mongo {
             unsigned char data[kOIDSize];
         };
 
+        static unsigned ourPid();
         static void foldInPid(MachineAndPid& x);
         static MachineAndPid genMachineAndPid();
     };
@@ -160,5 +161,7 @@ namespace mongo {
         /** Javascript JSON compatible */
         JS
     };
+
+     std::ostream& operator<<( std::ostream &s, const OID &o );
 
 }
