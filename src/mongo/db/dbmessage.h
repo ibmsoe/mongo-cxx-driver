@@ -174,7 +174,7 @@ namespace mongo {
         template<typename T> T readAndAdvance();
 
         const Message& _msg;
-        int _reserved; // flags or zero depending on packet, starts the packet
+        little<int> _reserved; // flags or zero depending on packet, starts the packet
 
         const char* _nsStart; // start of namespace string, +4 from message start
         const char* _nextjsobj; // current position reading packet

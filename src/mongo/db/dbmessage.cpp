@@ -58,9 +58,7 @@ namespace mongo {
         _theEnd = _msg.singleData()->_data + _msg.singleData()->dataLen();
         _nextjsobj = _msg.singleData()->_data;
 
-        //_reserved = readAndAdvance<int>();
-		_reserved = little<int>::ref( _nextjsobj );
-        _nextjsobj += sizeof(int);
+		_reserved = readAndAdvance<int>();
 
         // Read packet for NS
         if (messageShouldHaveNs()) {
@@ -112,24 +110,14 @@ namespace mongo {
 
 
     int DbMessage::pullInt() {
-        //return readAndAdvance<int>();
+        return readAndAdvance<int>();
 
-		if ( _nextjsobj == _nsStart )
-                _nextjsobj += _nsLen+ 1; // skip namespace
-            const little<int>& i = little<int>::ref( _nextjsobj );
-            _nextjsobj += 4;
-            return i;
  
     }
 
     long long DbMessage::pullInt64() {
-        //return readAndAdvance<long long>();
+        return readAndAdvance<long long>();
 
-		if ( _nextjsobj == _nsStart )
-                _nextjsobj += _nsLen+ 1; // skip namespace
-            little<long long>& i = little<long long>::ref( const_cast<char*>( _nextjsobj ) );
-            _nextjsobj += 8;
-            return i;
     }
 
     const long long* DbMessage::getArray(size_t count) const {
@@ -179,7 +167,7 @@ namespace mongo {
     T DbMessage::read() const {
         checkRead<T>(_nextjsobj, 1);
 
-        return *(reinterpret_cast<const T*>(_nextjsobj));
+        return little<T>::ref(_nextjsobj);
     }
 
     template<typename T> T DbMessage::readAndAdvance() {
